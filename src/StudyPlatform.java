@@ -2,8 +2,10 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.List; // java.util.List를 명시적으로 가져옵니다.
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -12,23 +14,19 @@ class Student implements Serializable {
     private String name;
     private String email;
 
-    // 생성자
     public Student(String name, String email) {
         this.name = name;
         this.email = email;
     }
 
-    // 이름 반환
     public String getName() {
         return name;
     }
 
-    // 이메일 반환
     public String getEmail() {
         return email;
     }
 
-    // 문자열 표현 반환
     @Override
     public String toString() {
         return name + " (" + email + ")";
@@ -39,41 +37,30 @@ class Student implements Serializable {
 class StudyGroup implements Serializable {
     private String groupName;
     private String subject;
-    private List<Student> members; // java.util.List 사용
+    private List<Student> members;
 
-    // 생성자
     public StudyGroup(String groupName, String subject) {
         this.groupName = groupName;
         this.subject = subject;
         this.members = new ArrayList<>();
     }
 
-    // 그룹 이름 반환
     public String getGroupName() {
         return groupName;
     }
 
-    // 과목 반환
     public String getSubject() {
         return subject;
     }
 
-    // 멤버 추가
     public void addMember(Student student) {
         members.add(student);
     }
 
-    // 멤버 제거
-    public void removeMember(Student student) {
-        members.remove(student);
-    }
-
-    // 멤버 목록 반환
     public List<Student> getMembers() {
         return members;
     }
 
-    // 문자열 표현 반환
     @Override
     public String toString() {
         return groupName + " - " + subject + " (" + members.size() + "명)";
@@ -82,24 +69,22 @@ class StudyGroup implements Serializable {
 
 // 메인 클래스
 public class StudyPlatform extends JFrame {
-    private List<StudyGroup> studyGroups; // java.util.List 사용
+    private List<StudyGroup> studyGroups;
     private JTextArea displayArea;
     private JTextField nameField, emailField, groupNameField, subjectField;
 
     private final String DATA_FILE = "studyGroups.dat";
+    private final String CSV_FILE = "GroupList.csv"; // CSV 파일 경로
 
-    // 생성자
     public StudyPlatform() {
         super("스터디 플랫폼");
         studyGroups = new ArrayList<>();
-        loadGroups();
+        loadGroupsFromCSV(CSV_FILE); // CSV 파일에서 그룹 로드
+        loadGroups(); // 기존 데이터 파일에서 그룹 로드
 
-        // GUI 구성
         setLayout(new BorderLayout());
 
-        // 상단 패널 - 학생 정보 입력
         JPanel inputPanel = new JPanel(new GridLayout(4, 2));
-
         inputPanel.add(new JLabel("이름:"));
         nameField = new JTextField();
         inputPanel.add(nameField);
@@ -118,9 +103,7 @@ public class StudyPlatform extends JFrame {
 
         add(inputPanel, BorderLayout.NORTH);
 
-        // 중앙 패널 - 버튼
         JPanel buttonPanel = new JPanel();
-
         JButton createButton = new JButton("스터디 그룹 생성");
         JButton joinButton = new JButton("그룹 참여");
         JButton viewButton = new JButton("그룹 보기");
@@ -131,18 +114,15 @@ public class StudyPlatform extends JFrame {
 
         add(buttonPanel, BorderLayout.CENTER);
 
-        // 하단 패널 - 그룹 목록 표시
         displayArea = new JTextArea();
         displayArea.setEditable(false);
         JScrollPane scrollPane = new JScrollPane(displayArea);
         add(scrollPane, BorderLayout.SOUTH);
 
-        // 버튼 액션 리스너
         createButton.addActionListener(e -> createStudyGroup());
         joinButton.addActionListener(e -> joinStudyGroup());
         viewButton.addActionListener(e -> displayGroups());
 
-        // 창 종료 시 데이터 저장
         addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) {
                 saveGroups();
@@ -186,9 +166,7 @@ public class StudyPlatform extends JFrame {
             }
         }
 
-        // 새로운 학생 생성
         Student student = new Student(name, email);
-        // 새로운 그룹 생성
         StudyGroup group = new StudyGroup(groupName, subject);
         group.addMember(student);
         studyGroups.add(group);
@@ -252,13 +230,33 @@ public class StudyPlatform extends JFrame {
         subjectField.setText("");
     }
 
+    // CSV 파일에서 그룹 데이터를 로드
+    private void loadGroupsFromCSV(String csvFilePath) {
+        try {
+            List<String> lines = Files.readAllLines(Paths.get(csvFilePath));
+            for (String line : lines) {
+                String[] parts = line.split(",");
+                if (parts.length == 2) {
+                    String groupName = parts[0].trim();
+                    String subject = parts[1].trim();
+                    StudyGroup group = new StudyGroup(groupName, subject);
+                    studyGroups.add(group);
+                } else {
+                    JOptionPane.showMessageDialog(this, "CSV 파일 형식이 올바르지 않습니다: " + line, "오류", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, "CSV 파일 로드에 실패했습니다: " + e.getMessage(), "오류", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+
     // 그룹 데이터를 파일에서 로드
     @SuppressWarnings("unchecked")
     private void loadGroups() {
         try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(DATA_FILE))) {
             studyGroups = (List<StudyGroup>) ois.readObject();
         } catch (IOException | ClassNotFoundException e) {
-            // 파일이 없거나 오류 발생 시 빈 리스트 사용
             studyGroups = new ArrayList<>();
         }
     }
@@ -268,11 +266,10 @@ public class StudyPlatform extends JFrame {
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(DATA_FILE))) {
             oos.writeObject(studyGroups);
         } catch (IOException e) {
-            JOptionPane.showMessageDialog(this, "데이터 저장에 실패했습니다.", "오류", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "데이터 저장에 실패했습니다: " + e.getMessage(), "오류", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    // 메인 메소드
     public static void main(String[] args) {
         new StudyPlatform();
     }
