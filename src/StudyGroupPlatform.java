@@ -24,7 +24,7 @@ class StudyGroup {
 
     @Override
     public String toString() {
-        return groupName;
+        return groupName + " : " + subject;
     }
 }
 
@@ -154,15 +154,21 @@ public class StudyGroupPlatform {
             }
         });
 
-        searchButton.addActionListener(e -> {
-            String subject = searchField.getText();
-            listModel.clear();
-            if (studyGroupMap.containsKey(subject)) {
-                for (StudyGroup group : studyGroupMap.get(subject)) {
-                    listModel.addElement(group);
+        joinButton.addActionListener(e -> {
+            StudyGroup selectedGroup = groupList.getSelectedValue();
+            if (selectedGroup != null) {
+                JTextField userName = new JTextField();
+                JTextField userId = new JTextField();
+                JPanel panel = new JPanel(new GridLayout(2, 2));
+                panel.add(new JLabel("이름:"));
+                panel.add(userName);
+                panel.add(new JLabel("학번:"));
+                panel.add(userId);
+                int result = JOptionPane.showConfirmDialog(frame, panel, "그룹 참가", JOptionPane.OK_CANCEL_OPTION);
+                if (result == JOptionPane.OK_OPTION) {
+                    selectedGroup.addMember(new Student(userName.getText(), userId.getText()));
+                    JOptionPane.showMessageDialog(frame, "그룹에 참가했습니다.");
                 }
-            } else {
-                JOptionPane.showMessageDialog(frame, "해당 과목의 그룹이 없습니다.");
             }
         });
     }
