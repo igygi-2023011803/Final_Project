@@ -73,6 +73,7 @@ class CSVHandler {
 public class StudyGroupPlatform {
     private List<StudyGroup> studyGroups;
     private Map<String, List<StudyGroup>> studyGroupMap;
+    private Set<String> groupNameSet;
     private CSVHandler csvHandler;
     private JList<StudyGroup> groupList;
     private DefaultListModel<StudyGroup> listModel;
@@ -82,6 +83,7 @@ public class StudyGroupPlatform {
         csvHandler = new CSVHandler("study_groups.csv");
         studyGroups = new ArrayList<>();
         studyGroupMap = new HashMap<>();
+        groupNameSet = new HashSet<>();
         setupGUI();
         loadStudyGroups();
     }
@@ -134,42 +136,24 @@ public class StudyGroupPlatform {
         frame.add(splitPane);
         frame.setVisible(true);
 
-        createButton.addActionListener(e -> {
-            String name = nameField.getText();
-            String studentId = idField.getText();
-            String groupName = groupNameField.getText();
-            String subject = subjectField.getText();
-
-            if (!name.isEmpty() && !studentId.isEmpty() && !groupName.isEmpty() && !subject.isEmpty()) {
-                StudyGroup newGroup = new StudyGroup(groupName, subject);
-                studyGroups.add(newGroup);
-                studyGroupMap.computeIfAbsent(subject, k -> new ArrayList<>()).add(newGroup);
-                listModel.addElement(newGroup);
-                try {
-                    csvHandler.writeStudyGroup(newGroup);
-                    JOptionPane.showMessageDialog(frame, "그룹이 생성되었습니다.");
-                } catch (IOException ex) {
-                    JOptionPane.showMessageDialog(frame, "오류 발생: " + ex.getMessage());
-                }
-            }
-        });
-
         joinButton.addActionListener(e -> {
             StudyGroup selectedGroup = groupList.getSelectedValue();
-            if (selectedGroup != null) {
-                JTextField userName = new JTextField();
-                JTextField userId = new JTextField();
-                JPanel panel = new JPanel(new GridLayout(2, 2));
-                panel.add(new JLabel("이름:"));
-                panel.add(userName);
-                panel.add(new JLabel("학번:"));
-                panel.add(userId);
-                int result = JOptionPane.showConfirmDialog(frame, panel, "그룹 참가", JOptionPane.OK_CANCEL_OPTION);
-                if (result == JOptionPane.OK_OPTION) {
-                    selectedGroup.addMember(new Student(userName.getText(), userId.getText()));
-                    JOptionPane.showMessageDialog(frame, "그룹에 참가했습니다.");
-                }
+            if (selectedGroup == null) {
+                JOptionPane.showMessageDialog(frame, "참가할 그룹을 먼저 선택해주세요.");
+                return;
             }
+            String name = JOptionPane.showInputDialog(frame, "이름을 입력하세요:");
+            String studentId = JOptionPane.showInputDialog(frame, "학번을 입력하세요:");
+            if (name == null || name.trim().isEmpty() || !name.matches("[a-zA-Z가-힣]+")) {
+                JOptionPane.showMessageDialog(frame, "올바른 이름을 입력해주세요.");
+                return;
+            }
+            if (studentId == null || !studentId.matches("\\d{10}")) {
+                JOptionPane.showMessageDialog(frame, "올바른 형식의 학번이 아닙니다.");
+                return;
+            }
+            selectedGroup.addMember(new Student(name, studentId));
+            JOptionPane.showMessageDialog(frame, "그룹에 참가되었습니다.");
         });
     }
 
@@ -178,6 +162,7 @@ public class StudyGroupPlatform {
             studyGroups = csvHandler.readStudyGroups();
             for (StudyGroup group : studyGroups) {
                 studyGroupMap.computeIfAbsent(group.subject, k -> new ArrayList<>()).add(group);
+                groupNameSet.add(group.groupName);
                 listModel.addElement(group);
             }
         } catch (IOException e) {
