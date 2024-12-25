@@ -41,7 +41,7 @@
                       +---------------------+
 
 ### 3.2 클래스 다이어그램
-![스크린샷 2024-12-26 000540](https://github.com/user-attachments/assets/1b06efb9-fa03-40ab-8fd1-87136aef1349)
+[![스크린샷 2024-12-26 000540](https://github.com/user-attachments/assets/1b06efb9-fa03-40ab-8fd1-87136aef1349)](https://github.com/igygi-2023011803/Final_Project/issues/1#issue-2758854571)
 
 
 ### 3.3 절차 설명  
