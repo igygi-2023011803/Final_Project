@@ -6,44 +6,89 @@ import java.io.*;
 import java.util.*;
 import java.util.List;
 
+/**
+ * 스터디 그룹을 표현하는 클래스입니다.
+ * 이 클래스는 그룹명, 과목명, 그리고 그룹에 속한 학생들을 관리합니다.
+ */
 class StudyGroup {
     String groupName;
     String subject;
     List<Student> members;
 
+    /**
+     * 스터디 그룹을 생성하는 생성자입니다.
+     *
+     * @param groupName 그룹명
+     * @param subject 과목명
+     */
     public StudyGroup(String groupName, String subject) {
         this.groupName = groupName;
         this.subject = subject;
         this.members = new ArrayList<>();
     }
 
+    /**
+     * 스터디 그룹에 학생을 추가합니다.
+     *
+     * @param student 추가할 학생 객체
+     */
     public void addMember(Student student) {
         members.add(student);
     }
 
+    /**
+     * 그룹명과 과목명을 반환하는 메서드입니다.
+     *
+     * @return 스터디 그룹명과 과목을 문자열로 반환
+     */
     @Override
     public String toString() {
         return groupName + " : " + subject;
     }
 }
 
+/**
+ * 학생을 표현하는 클래스입니다.
+ * 학생의 이름과 학번을 저장합니다.
+ */
 class Student {
     String name;
     String studentId;
 
+    /**
+     * 학생 객체를 생성하는 생성자입니다.
+     *
+     * @param name 학생의 이름
+     * @param studentId 학생의 학번
+     */
     public Student(String name, String studentId) {
         this.name = name;
         this.studentId = studentId;
     }
 }
 
+/**
+ * CSV 파일을 읽고 쓰는 기능을 제공하는 클래스입니다.
+ * 이 클래스는 스터디 그룹 데이터를 CSV 파일에서 읽고 저장하는 역할을 합니다.
+ */
 class CSVHandler {
     private final String filePath;
 
+    /**
+     * CSVHandler 객체를 생성하는 생성자입니다.
+     *
+     * @param filePath CSV 파일의 경로
+     */
     public CSVHandler(String filePath) {
         this.filePath = filePath;
     }
 
+    /**
+     * CSV 파일에서 스터디 그룹 목록을 읽어옵니다.
+     *
+     * @return 읽어온 스터디 그룹 목록
+     * @throws IOException 파일을 읽는 중에 발생할 수 있는 오류
+     */
     public List<StudyGroup> readStudyGroups() throws IOException {
         List<StudyGroup> groups = new ArrayList<>();
         BufferedReader reader = new BufferedReader(new FileReader(filePath));
@@ -58,6 +103,12 @@ class CSVHandler {
         return groups;
     }
 
+    /**
+     * 스터디 그룹 목록을 CSV 파일에 저장합니다.
+     *
+     * @param groups 저장할 스터디 그룹 목록
+     * @throws IOException 파일에 저장하는 중에 발생할 수 있는 오류
+     */
     public void writeStudyGroups(List<StudyGroup> groups) throws IOException {
         BufferedWriter writer = new BufferedWriter(new FileWriter(filePath));
         for (StudyGroup group : groups) {
@@ -68,32 +119,42 @@ class CSVHandler {
     }
 }
 
+/**
+ * 스터디 그룹 플랫폼의 메인 클래스입니다.
+ * GUI를 통해 사용자가 스터디 그룹을 생성하고, 검색하고, 그룹에 참여할 수 있는 기능을 제공합니다.
+ */
 public class StudyGroupPlatform {
     private List<StudyGroup> studyGroups;
     private Map<String, List<StudyGroup>> studyGroupMap;
     private Set<String> groupNameSet;
     private CSVHandler csvHandler;
     private JList<StudyGroup> groupList;
-    private DefaultListModel<StudyGroup> listModel;  // listModel을 클래스 수준에서 초기화
+    private DefaultListModel<StudyGroup> listModel;  // JList에 표시할 스터디 그룹 목록
     private JTextField searchField;
 
+    /**
+     * StudyGroupPlatform 객체를 생성하는 생성자입니다.
+     * 스터디 그룹 데이터를 읽고 GUI를 설정합니다.
+     */
     public StudyGroupPlatform() {
-        // listModel을 초기화
         listModel = new DefaultListModel<>();
         csvHandler = new CSVHandler("study_groups.csv");
         studyGroups = new ArrayList<>();
         studyGroupMap = new HashMap<>();
         groupNameSet = new HashSet<>();
-        loadStudyGroups(); // GUI가 로드되기 전에 그룹 데이터를 불러옵니다.
-        setupGUI();
+        loadStudyGroups(); // 초기화 시 CSV 파일에서 데이터를 불러옵니다.
+        setupGUI();  // GUI를 설정합니다.
     }
 
-    // 초기 실행 시 CSV 파일에서 그룹 목록을 불러옴
+    /**
+     * CSV 파일에서 스터디 그룹 목록을 읽어와 JList에 표시합니다.
+     * 이 메서드는 StudyGroupPlatform 생성자에서 호출됩니다.
+     */
     private void loadStudyGroups() {
         try {
             studyGroups = csvHandler.readStudyGroups();
             for (StudyGroup group : studyGroups) {
-                listModel.addElement(group); // JList에 그룹을 추가
+                listModel.addElement(group); // JList에 스터디 그룹을 추가
                 groupNameSet.add(group.groupName);
                 studyGroupMap.computeIfAbsent(group.subject, k -> new ArrayList<>()).add(group);
             }
@@ -102,15 +163,15 @@ public class StudyGroupPlatform {
         }
     }
 
+    /**
+     * GUI를 설정하는 메서드입니다. 스터디 그룹 생성, 검색 및 그룹 참가 기능을 제공합니다.
+     */
     private void setupGUI() {
         JFrame frame = new JFrame("스터디 그룹 플랫폼");
         frame.setSize(700, 600);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.getContentPane().setBackground(new Color(245, 245, 245)); // 배경색 설정
 
-        // 배경색 설정
-        frame.getContentPane().setBackground(new Color(245, 245, 245));
-
-        // JSplitPane 대신 GridBagLayout 사용
         JPanel mainPanel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
 
@@ -227,9 +288,12 @@ public class StudyGroupPlatform {
         });
     }
 
+    /**
+     * StudyGroupPlatform의 메인 메서드입니다. 프로그램을 시작합니다.
+     *
+     * @param args 프로그램 실행 시 필요한 명령어 인수
+     */
     public static void main(String[] args) {
         new StudyGroupPlatform();
     }
 }
-
-
